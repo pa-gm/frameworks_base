@@ -17,6 +17,8 @@
 package com.android.systemui.shade;
 
 import static android.app.StatusBarManager.WINDOW_STATE_SHOWING;
+import static android.provider.Settings.System.DOUBLE_TAP_SLEEP_GESTURE;
+import static android.provider.Settings.System.GESTURE_DOUBLE_TAP;
 import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
 
@@ -65,6 +67,7 @@ import android.graphics.Region;
 import android.hardware.biometrics.SensorLocationInternal;
 import android.hardware.display.AmbientDisplayConfiguration;
 import android.hardware.fingerprint.FingerprintSensorPropertiesInternal;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
@@ -628,6 +631,8 @@ public final class NotificationPanelViewController implements Dumpable {
      * For PanelView fling perflock call
      */
     private BoostFramework mPerf = null;
+
+    private boolean mDoubleTapToSleepEnabled, mDoubleTapToWakeEnabled;
 
     private final Runnable mFlingCollapseRunnable = () -> fling(0, false /* expand */,
             mNextCollapseSpeedUpFactor, false /* expandBecauseOfFalsing */);
@@ -3465,6 +3470,17 @@ public final class NotificationPanelViewController implements Dumpable {
                 /* notifyForDescendants */ false,
                 mSettingsChangeObserver
         );
+        mContentResolver.registerContentObserver(
+                Settings.System.getUriFor(GESTURE_DOUBLE_TAP),
+                /* notifyForDescendants */ false,
+                mSettingsChangeObserver
+        );
+        mContentResolver.registerContentObserver(
+                Settings.System.getUriFor(DOUBLE_TAP_SLEEP_GESTURE),
+                /* notifyForDescendants */ false,
+                mSettingsChangeObserver
+        );
+        mSettingsChangeObserver.update();
     }
 
     public void setBlockedGesturalNavigation(boolean blocked) {
@@ -4339,11 +4355,26 @@ public final class NotificationPanelViewController implements Dumpable {
         }
 
         @Override
-        public void onChange(boolean selfChange) {
+        public void onChange(boolean selfChange, Uri uri) {
             debugLog("onSettingsChanged");
 
-            // Can affect multi-user switcher visibility
-            reInflateViews();
+            if (uri.equals(Settings.System.getUriFor(DOUBLE_TAP_SLEEP_GESTURE))
+                    || uri.equals(Settings.System.getUriFor(GESTURE_DOUBLE_TAP))) {
+                update();
+            } else {
+                // Can affect multi-user switcher visibility
+                reInflateViews();
+            }
+        }
+
+        public void update() {
+            mDoubleTapToSleepEnabled = Settings.System.getIntForUser(mContentResolver,
+                    DOUBLE_TAP_SLEEP_GESTURE, 0, UserHandle.USER_CURRENT) == 1;
+            mDoubleTapToWakeEnabled = Settings.System.getIntForUser(
+                    mView.getContext().getContentResolver(), Settings.System.GESTURE_DOUBLE_TAP,
+                    mView.getContext().getResources().getInteger(
+                        com.android.internal.R.integer.config_doubleTapDefault),
+                    UserHandle.USER_CURRENT) == 1;
         }
     }
 
@@ -4859,15 +4890,13 @@ public final class NotificationPanelViewController implements Dumpable {
                 return false;
             }
 
-            final boolean isDoubleTapEnabled = mAmbientDisplayConfiguration
+            final boolean doubleTapToWake = mDoubleTapToWakeEnabled || mAmbientDisplayConfiguration
                     .doubleTapGestureEnabled(mUserTracker.getUserId());
-            final boolean isCustomDoubleTapEnabled = Settings.System.getIntForUser(
-                    mView.getContext().getContentResolver(), Settings.System.GESTURE_DOUBLE_TAP,
-                    mView.getContext().getResources().getInteger(
-                        com.android.internal.R.integer.config_doubleTapDefault),
-                    UserHandle.USER_CURRENT) == 1;
-            if (isOnKeyguard() && (isDoubleTapEnabled || isCustomDoubleTapEnabled)
-                    && !mPulsing && !mDozing) {
+            // Double tap to sleep on lockscreen
+            if ((isOnKeyguard() && doubleTapToWake && !mPulsing && !mDozing)
+                    // Double tap to sleep on statusbar
+                    || (mDoubleTapToSleepEnabled && !mQsController.getExpanded()
+                        && event.getY() < mStatusBarMinHeight)) {
                 mDoubleTapGestureListener.onTouchEvent(event);
             }
 
@@ -5000,7 +5029,7 @@ public final class NotificationPanelViewController implements Dumpable {
                         onTrackingStarted();
                     }
                     if (isFullyCollapsed() && !mHeadsUpManager.hasPinnedHeadsUp()
-                            && !mCentralSurfaces.isBouncerShowing()) {
+                            && !mCentralSurfaces.isBouncerShowing() && !mDoubleTapToSleepEnabled) {
                         startOpening(event);
                     }
                     break;
