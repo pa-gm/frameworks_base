@@ -3307,7 +3307,7 @@
          "logout" =  Logout the current user
          -->
     <string-array translatable="false" name="config_globalActionsList">
-        <item>emergency</item>
+        <!--item>emergency</item-->
         <item>lockdown</item>
         <item>power</item>
         <item>restart</item>
