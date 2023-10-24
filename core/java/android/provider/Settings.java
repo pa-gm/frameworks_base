@@ -5750,6 +5750,12 @@ public final class Settings {
         public static final String LOCK_GESTURE_STATUS = "lock_gesture_status";
 
         /**
+         * Whether to show notification volume control slider separate from ring.
+         * @hide
+         */
+        public static final String VOLUME_SEPARATE_NOTIFICATION = "volume_separate_notification";
+
+        /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.
          *
