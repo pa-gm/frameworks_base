@@ -58,6 +58,7 @@ public class PropImitationHooks {
     private static final String PACKAGE_ASI = "com.google.android.as";
     private static final String PACKAGE_FINSKY = "com.android.vending";
     private static final String PACKAGE_GBOARD = "com.google.android.inputmethod.latin";
+    private static final String PACKAGE_GOOGLE_ONE = "com.google.android.apps.subscriptions.red";
     private static final String PACKAGE_GMS = "com.google.android.gms";
     private static final String PACKAGE_GPHOTOS = "com.google.android.apps.photos";
     private static final String PACKAGE_NETFLIX = "com.netflix.mediaclient";
@@ -71,6 +72,15 @@ public class PropImitationHooks {
 
     private static final String FEATURE_NEXUS_PRELOAD =
             "com.google.android.apps.photos.NEXUS_PRELOAD";
+
+    private static final Map<String, Object> sPixelFoldProps = Map.of(
+        "BRAND", "google",
+        "MANUFACTURER", "Google",
+        "DEVICE", "felix",
+        "PRODUCT", "felix",
+        "MODEL", "Pixel Fold",
+        "FINGERPRINT", "google/felix/felix:13/TQ3C.230901.001.B1/10750989:user/release-keys"
+    );
 
     private static final Map<String, Object> sPixelProps = Map.of(
         "BRAND", "google",
@@ -134,6 +144,9 @@ public class PropImitationHooks {
                     && processName.equals(PROCESS_GMS_PERSISTENT)))) {
             dlog("Spoofing Pixel 5 for: " + packageName + " process: " + processName);
             sPixelProps.forEach(PropImitationHooks::setPropValue);
+        } else if (packageName.equals(PACKAGE_GOOGLE_ONE)) {
+            dlog("Spoofing Pixel Fold for Google One");
+            sPixelFoldProps.forEach(PropImitationHooks::setPropValue);
         } else if (sIsPhotos) {
             dlog("Spoofing Pixel XL for Google Photos");
             sPixelXLProps.forEach((PropImitationHooks::setPropValue));
