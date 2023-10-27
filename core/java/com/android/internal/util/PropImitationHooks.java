@@ -57,6 +57,7 @@ public class PropImitationHooks {
     private static final String PACKAGE_ARCORE = "com.google.ar.core";
     private static final String PACKAGE_ASI = "com.google.android.as";
     private static final String PACKAGE_FINSKY = "com.android.vending";
+    private static final String PACKAGE_GBOARD = "com.google.android.inputmethod.latin";
     private static final String PACKAGE_GMS = "com.google.android.gms";
     private static final String PACKAGE_GPHOTOS = "com.google.android.apps.photos";
     private static final String PACKAGE_NETFLIX = "com.netflix.mediaclient";
@@ -128,6 +129,7 @@ public class PropImitationHooks {
             setPropValue("FINGERPRINT", sStockFp);
         } else if (sSpoofGapps && (packageName.equals(PACKAGE_VELVET)
                 || packageName.equals(PACKAGE_ASI)
+                || packageName.equals(PACKAGE_GBOARD)
                 || (packageName.equals(PACKAGE_GMS)
                     && processName.equals(PROCESS_GMS_PERSISTENT)))) {
             dlog("Spoofing Pixel 5 for: " + packageName + " process: " + processName);
